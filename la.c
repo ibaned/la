@@ -8,6 +8,10 @@
 #include <gsl/gsl_eigen.h>
 #endif
 
+#if USE_METIS
+#include <metis.h>
+#endif
+
 struct graph {
   int n;
   int* off;
@@ -187,7 +191,8 @@ void test_ordering(struct graph g, char const* name, int* order)
 
 void test_bfs(struct graph g)
 {
-  test_ordering(g, "BFS", get_bfs_order(g, g.n - 1));
+  test_ordering(g, "BFS (0)", get_bfs_order(g, 0));
+  test_ordering(g, "BFS (n-1)", get_bfs_order(g, g.n - 1));
 }
 
 struct cm {
@@ -211,7 +216,7 @@ int* get_cuthill_mckee_order(struct graph g, int start)
 {
   int* bfs_order;
   int* bfs_layer;
-  bfs(g, g.n - 1, &bfs_order, &bfs_layer);
+  bfs(g, start, &bfs_order, &bfs_layer);
   free(bfs_order);
   struct cm* cms = malloc(sizeof(struct cm) * g.n);
   for (int i = 0; i < g.n; ++i) {
@@ -230,7 +235,8 @@ int* get_cuthill_mckee_order(struct graph g, int start)
 
 void test_cuthill_mckee(struct graph g)
 {
-  test_ordering(g, "Cuthill-McKee", get_cuthill_mckee_order(g, g.n - 1));
+  test_ordering(g, "Cuthill-McKee (0)", get_cuthill_mckee_order(g, 0));
+  test_ordering(g, "Cuthill-McKee (n-1)", get_cuthill_mckee_order(g, g.n - 1));
 }
 
 #if USE_GSL
@@ -284,6 +290,54 @@ int juvan_mohar_method(struct graph g)
 
 #endif
 
+#if USE_METIS
+int* get_metis_order(struct graph g)
+{
+  idx_t nvtxs = g.n;
+  idx_t* xadj = malloc(sizeof(idx_t) * (nvtxs + 1));
+  idx_t* adjncy = malloc(sizeof(idx_t) * nedges(g));
+  xadj[0] = 0;
+  for (int i = 0; i < g.n; ++i) {
+    xadj[i + 1] = g.off[i + 1];
+    int a = g.off[i];
+    int b = g.off[i + 1];
+    for (int j = a; j < b; ++j)
+      adjncy[j] = g.adj[j];
+  }
+  idx_t* vwgt = NULL;
+//idx_t options[METIS_NOPTIONS] = {0};
+//options[METIS_OPTION_CTYPE] = METIS_CTYPE_RM;
+//options[METIS_OPTION_RTYPE] = METIS_RTYPE_FM;
+//options[METIS_OPTION_NO2HOP] = 0;
+//options[METIS_OPTION_NSEPS] = 1;
+//options[METIS_OPTION_NITER] = 10;
+//options[METIS_OPTION_UFACTOR] = 10;
+//options[METIS_OPTION_COMPRESS] = 0;
+//options[METIS_OPTION_CCORDER] = 0;
+//options[METIS_OPTION_SEED] = 42;
+//options[METIS_OPTION_PFACTOR] = 0;
+//options[METIS_OPTION_NUMBERING] = 0;
+//options[METIS_OPTION_DBGLVL] = METIS_DBG_INFO | METIS_DBG_TIME;
+  idx_t* options = NULL;
+  idx_t* perm = malloc(sizeof(idx_t) * nvtxs);
+  idx_t* iperm = malloc(sizeof(idx_t) * nvtxs);
+  METIS_NodeND(&nvtxs, xadj, adjncy, vwgt, options, perm, iperm);
+  free(xadj);
+  free(adjncy);
+  free(iperm);
+  int* order = malloc(sizeof(int) * g.n);
+  for (int i = 0; i < g.n; ++i)
+    order[i] = perm[i];
+  free(perm);
+  return order;
+}
+
+void test_metis(struct graph g)
+{
+  test_ordering(g, "METIS", get_metis_order(g));
+}
+#endif
+
 void info(struct graph g)
 {
   printf("%d vertices, %d edges\n", g.n, nedges(g) / 2);
@@ -302,5 +356,8 @@ int main()
   info(g);
   test_bfs(g);
   test_cuthill_mckee(g);
+#if USE_METIS
+  test_metis(g);
+#endif
   free_graph(g);
 }
