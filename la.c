@@ -130,10 +130,9 @@ int* invert_ordering(int n, int* new_to_old)
   return old_to_new;
 }
 
-struct graph reorder(struct graph g,
-    int* new_to_old,
-    int* old_to_new)
+struct graph reorder(struct graph g, int* new_to_old)
 {
+  int* old_to_new = invert_ordering(g.n, new_to_old);
   struct graph g2;
   g2.n = g.n;
   g2.off = malloc(sizeof(int) * (g.n + 1));
@@ -149,6 +148,7 @@ struct graph reorder(struct graph g,
       g2.adj[a + j] = old_to_new[k];
     }
   }
+  free(old_to_new);
   return g2;
 }
 
@@ -166,9 +166,7 @@ void test_bfs(struct graph g)
   int* bfs_layer;
   bfs(g, g.n - 1, &bfs_order, &bfs_layer);
   free(bfs_layer);
-  int* bfs_order_inv = invert_ordering(g.n, bfs_order);
-  struct graph g2 = reorder(g, bfs_order, bfs_order_inv);
-  free(bfs_order_inv);
+  struct graph g2 = reorder(g, bfs_order);
   free(bfs_order);
   printf("after BFS reordering:\n");
   info(g2);
@@ -210,10 +208,8 @@ void test_cuthill_mckee(struct graph g)
   for (int i = 0; i < g.n; ++i)
     new_to_old[i] = cms[i].v;
   free(cms);
-  int* old_to_new = invert_ordering(g.n, new_to_old);
-  struct graph g2 = reorder(g, new_to_old, old_to_new);
+  struct graph g2 = reorder(g, new_to_old);
   free(new_to_old);
-  free(old_to_new);
   printf("after Cuthill-McKee reordering:\n");
   info(g2);
   free_graph(g2);
