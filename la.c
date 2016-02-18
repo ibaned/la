@@ -1,9 +1,11 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #if USE_GSL
-#include <gsl/gsl_math.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_eigen.h>
 #endif
 
 struct graph {
@@ -175,14 +177,6 @@ void printla(struct graph g, char const* name)
   printla2(name, la(g));
 }
 
-void info(struct graph g)
-{
-  printf("%d vertices, %d edges\n", g.n, nedges(g) / 2);
-  printla2("edges LB", edges_method(g));
-  printla2("degree LB", degree_method(g));
-  printla(g, "normal layout");
-}
-
 void test_ordering(struct graph g, char const* name, int* order)
 {
   struct graph g2 = reorder(g, order);
@@ -237,6 +231,69 @@ int* get_cuthill_mckee_order(struct graph g, int start)
 void test_cuthill_mckee(struct graph g)
 {
   test_ordering(g, "Cuthill-McKee", get_cuthill_mckee_order(g, g.n - 1));
+}
+
+#if USE_GSL
+
+gsl_matrix* get_laplacian(struct graph g)
+{
+  gsl_matrix* m = gsl_matrix_calloc(g.n, g.n);
+  for (int i = 0; i < g.n; ++i) {
+    gsl_matrix_set(m, i, i, deg(g, i));
+    int a = g.off[i];
+    int b = g.off[i + 1];
+    for (int j = a; j < b; ++j)
+      gsl_matrix_set(m, i, g.adj[j], -1);
+  }
+  return m;
+}
+
+gsl_vector* get_eigenvalues(gsl_matrix* m)
+{
+  gsl_vector* v = gsl_vector_alloc(m->size1);
+  gsl_eigen_symm_workspace* ws = gsl_eigen_symm_alloc(m->size1);
+  gsl_eigen_symm(m, v, ws);
+  gsl_eigen_symm_free(ws);
+  return v;
+}
+
+int compare_double_fabs(double const* a, double const* b)
+{
+  if (*a != *b)
+    return fabs(*a) > fabs(*b) ? 1 : -1;
+  return 0;
+}
+
+void sort_vector(gsl_vector* v)
+{
+  qsort(v->data, v->size, sizeof(double), (comparator) compare_double_fabs);
+}
+
+int juvan_mohar_method(struct graph g)
+{
+  if (g.n < 2)
+    return 0;
+  gsl_matrix* m = get_laplacian(g);
+  gsl_vector* v = get_eigenvalues(m);
+  gsl_matrix_free(m);
+  sort_vector(v);
+  double l2 = gsl_vector_get(v, 1);
+  gsl_vector_free(v);
+  return (int) (round(fabs(l2) * (g.n * g.n - 1) / 6.0));
+}
+
+#endif
+
+void info(struct graph g)
+{
+  printf("%d vertices, %d edges\n", g.n, nedges(g) / 2);
+  printla2("edges LB", edges_method(g));
+  printla2("degree LB", degree_method(g));
+#if USE_GSL
+  if (g.n < 2000)
+    printla2("Juvan-Mohar LB", juvan_mohar_method(g));
+#endif
+  printla(g, "normal layout");
 }
 
 int main()
