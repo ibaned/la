@@ -122,7 +122,7 @@ void bfs(struct graph g, int start,
   *p_layer = layer;
 }
 
-int* invert_map(int n, int* new_to_old)
+int* invert_ordering(int n, int* new_to_old)
 {
   int* old_to_new = malloc(sizeof(int) * n);
   for (int i = 0; i < n; ++i)
@@ -160,20 +160,70 @@ void info(struct graph g)
   printf("lower bound by degree method: %d\n", degree_method(g));
 }
 
-int main()
+void test_bfs(struct graph g)
 {
-  struct graph g = read_graph(stdin);
-  info(g);
   int* bfs_order;
   int* bfs_layer;
   bfs(g, g.n - 1, &bfs_order, &bfs_layer);
   free(bfs_layer);
-  int* bfs_order_inv = invert_map(g.n, bfs_order);
+  int* bfs_order_inv = invert_ordering(g.n, bfs_order);
   struct graph g2 = reorder(g, bfs_order, bfs_order_inv);
   free(bfs_order_inv);
   free(bfs_order);
-  free_graph(g);
   printf("after BFS reordering:\n");
   info(g2);
   free_graph(g2);
+}
+
+struct cm {
+  int v;
+  int l;
+  int d;
+};
+
+int compare_cm(struct cm const* a, struct cm const* b)
+{
+  if (a->l != b->l)
+    return a->l > b->l ? 1 : -1;
+  if (a->d != b->d)
+    return a->d > b->d ? 1 : -1;
+  return 0;
+}
+
+typedef int (*comparator)(const void*, const void*);
+
+void test_cuthill_mckee(struct graph g)
+{
+  int* bfs_order;
+  int* bfs_layer;
+  bfs(g, g.n - 1, &bfs_order, &bfs_layer);
+  free(bfs_order);
+  struct cm* cms = malloc(sizeof(struct cm) * g.n);
+  for (int i = 0; i < g.n; ++i) {
+    cms[i].v = i;
+    cms[i].l = bfs_layer[i];
+    cms[i].d = deg(g, i);
+  }
+  free(bfs_layer);
+  qsort(cms, g.n, sizeof(struct cm), (comparator) compare_cm);
+  int* new_to_old = malloc(sizeof(int) * g.n);
+  for (int i = 0; i < g.n; ++i)
+    new_to_old[i] = cms[i].v;
+  free(cms);
+  int* old_to_new = invert_ordering(g.n, new_to_old);
+  struct graph g2 = reorder(g, new_to_old, old_to_new);
+  free(new_to_old);
+  free(old_to_new);
+  printf("after Cuthill-McKee reordering:\n");
+  info(g2);
+  free_graph(g2);
+}
+
+int main()
+{
+  struct graph g = read_graph(stdin);
+  info(g);
+  test_bfs(g);
+  test_cuthill_mckee(g);
+  free_graph(g);
 }
