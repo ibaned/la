@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -116,11 +117,22 @@ void bfs(struct graph g, int start,
       }
     }
   }
+  assert(end == g.n);
   *p_order = queue;
   *p_layer = layer;
 }
 
-struct graph reorder(struct graph g, int* new_to_old)
+int* invert_map(int n, int* new_to_old)
+{
+  int* old_to_new = malloc(sizeof(int) * n);
+  for (int i = 0; i < n; ++i)
+    old_to_new[new_to_old[i]] = i;
+  return old_to_new;
+}
+
+struct graph reorder(struct graph g,
+    int* new_to_old,
+    int* old_to_new)
 {
   struct graph g2;
   g2.n = g.n;
@@ -128,22 +140,40 @@ struct graph reorder(struct graph g, int* new_to_old)
   g2.adj = malloc(sizeof(int) * nedges(g));
   g2.off[0] = 0;
   for (int i = 0; i < g.n; ++i) {
-    int j = new_to_old[i];
-    int d = deg(g, j);
+    int oi = new_to_old[i];
+    int d = deg(g, oi);
     int a = g2.off[i];
-    int b = g2.off[i + 1] = g2.off[i] + d;
-    for (int e = a; e < b; ++e)
-      g2.adj[e] = g.adj[g.off[j] + (e - a)];
+    g2.off[i + 1] = a + d;
+    for (int j = 0; j < d; ++j) {
+      int k = g.adj[g.off[oi] + j];
+      g2.adj[a + j] = old_to_new[k];
+    }
   }
   return g2;
+}
+
+void info(struct graph g)
+{
+  printf("%d vertices, %d edges\n", g.n, nedges(g) / 2);
+  printf("current total spread: %d\n", la(g));
+  printf("lower bound by edges method: %d\n", edges_method(g));
+  printf("lower bound by degree method: %d\n", degree_method(g));
 }
 
 int main()
 {
   struct graph g = read_graph(stdin);
-  printf("%d vertices, %d edges\n", g.n, nedges(g) / 2);
-  printf("current total spread: %d\n", la(g));
-  printf("lower bound by edges method: %d\n", edges_method(g));
-  printf("lower bound by degree method: %d\n", degree_method(g));
+  info(g);
+  int* bfs_order;
+  int* bfs_layer;
+  bfs(g, g.n - 1, &bfs_order, &bfs_layer);
+  free(bfs_layer);
+  int* bfs_order_inv = invert_map(g.n, bfs_order);
+  struct graph g2 = reorder(g, bfs_order, bfs_order_inv);
+  free(bfs_order_inv);
+  free(bfs_order);
   free_graph(g);
+  printf("after BFS reordering:\n");
+  info(g2);
+  free_graph(g2);
 }
