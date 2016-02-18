@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#if USE_GSL
+#include <gsl/gsl_math.h>
+#endif
+
 struct graph {
   int n;
   int* off;
