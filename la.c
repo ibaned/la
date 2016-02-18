@@ -122,6 +122,15 @@ void bfs(struct graph g, int start,
   *p_layer = layer;
 }
 
+int* get_bfs_order(struct graph g, int start)
+{
+  int* order;
+  int* layer;
+  bfs(g, start, &order, &layer);
+  free(layer);
+  return order;
+}
+
 int* invert_ordering(int n, int* new_to_old)
 {
   int* old_to_new = malloc(sizeof(int) * n);
@@ -152,25 +161,35 @@ struct graph reorder(struct graph g, int* new_to_old)
   return g2;
 }
 
+void printla2(char const* name, int n)
+{
+  printf("%20s LA measure: %15d\n", name, n);
+}
+
+void printla(struct graph g, char const* name)
+{
+  printla2(name, la(g));
+}
+
 void info(struct graph g)
 {
   printf("%d vertices, %d edges\n", g.n, nedges(g) / 2);
-  printf("current total spread: %d\n", la(g));
-  printf("lower bound by edges method: %d\n", edges_method(g));
-  printf("lower bound by degree method: %d\n", degree_method(g));
+  printla2("edges LB", edges_method(g));
+  printla2("degree LB", degree_method(g));
+  printla(g, "normal layout");
+}
+
+void test_ordering(struct graph g, char const* name, int* order)
+{
+  struct graph g2 = reorder(g, order);
+  free(order);
+  printla(g2, name);
+  free_graph(g2);
 }
 
 void test_bfs(struct graph g)
 {
-  int* bfs_order;
-  int* bfs_layer;
-  bfs(g, g.n - 1, &bfs_order, &bfs_layer);
-  free(bfs_layer);
-  struct graph g2 = reorder(g, bfs_order);
-  free(bfs_order);
-  printf("after BFS reordering:\n");
-  info(g2);
-  free_graph(g2);
+  test_ordering(g, "BFS", get_bfs_order(g, g.n - 1));
 }
 
 struct cm {
@@ -190,7 +209,7 @@ int compare_cm(struct cm const* a, struct cm const* b)
 
 typedef int (*comparator)(const void*, const void*);
 
-void test_cuthill_mckee(struct graph g)
+int* get_cuthill_mckee_order(struct graph g, int start)
 {
   int* bfs_order;
   int* bfs_layer;
@@ -208,11 +227,12 @@ void test_cuthill_mckee(struct graph g)
   for (int i = 0; i < g.n; ++i)
     new_to_old[i] = cms[i].v;
   free(cms);
-  struct graph g2 = reorder(g, new_to_old);
-  free(new_to_old);
-  printf("after Cuthill-McKee reordering:\n");
-  info(g2);
-  free_graph(g2);
+  return new_to_old;
+}
+
+void test_cuthill_mckee(struct graph g)
+{
+  test_ordering(g, "Cuthill-McKee", get_cuthill_mckee_order(g, g.n - 1));
 }
 
 int main()
