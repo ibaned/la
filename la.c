@@ -90,30 +90,52 @@ int degree_method(struct graph g)
   return lb / 2;
 }
 
-int* bfs(struct graph g, int start)
+void bfs(struct graph g, int start,
+    int** p_order,
+    int** p_layer)
 {
-  enum { BLACK, GREY, WHITE };
   int* queue = malloc(sizeof(int) * g.n);
-  int* state = malloc(sizeof(int) * g.n);
+  int* layer = malloc(sizeof(int) * g.n);
+  int nlayers = 0;
   int begin = 0;
   int end = 0;
   for (int i = 0; i < g.n; ++i)
-    state[i] = WHITE;
+    layer[i] = -1;
   /* assuming connected */
   queue[end++] = start;
+  layer[start] = 0;
   while (end != begin) {
     int j = queue[begin++];
-    state[j] = BLACK;
     int a = g.off[j];
     int b = g.off[j + 1];
     for (int e = a; e < b; ++e) {
       int k = g.adj[e];
-      state[k] = GREY;
-      queue[end++] = k;
+      if (layer[k] == -1) {
+        layer[k] = layer[j] + 1;
+        queue[end++] = k;
+      }
     }
   }
-  free(state);
-  return queue;
+  *p_order = queue;
+  *p_layer = layer;
+}
+
+struct graph reorder(struct graph g, int* new_to_old)
+{
+  struct graph g2;
+  g2.n = g.n;
+  g2.off = malloc(sizeof(int) * (g.n + 1));
+  g2.adj = malloc(sizeof(int) * nedges(g));
+  g2.off[0] = 0;
+  for (int i = 0; i < g.n; ++i) {
+    int j = new_to_old[i];
+    int d = deg(g, j);
+    int a = g2.off[i];
+    int b = g2.off[i + 1] = g2.off[i] + d;
+    for (int e = a; e < b; ++e)
+      g2.adj[e] = g.adj[g.off[j] + (e - a)];
+  }
+  return g2;
 }
 
 int main()
