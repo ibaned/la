@@ -66,12 +66,15 @@ int edges_method(struct graph g)
   int i = 1;
   int f = 0;
   int lb = 0;
-  while (f + n - i <= m && i < n) {
-    f = f + n - i;
-    lb = lb + i * (n - i);
+  while (m > 0) {
+    int take = n - i;
+    if (take > m)
+      take = m;
+    m = m - take;
+    lb = lb + i * take;
     i = i + 1;
   }
-  return lb + i * (m - f);
+  return lb;
 }
 
 int degree_method(struct graph g)
@@ -116,7 +119,7 @@ int* bfs(struct graph g, int start)
 int main()
 {
   struct graph g = read_graph(stdin);
-  printf("%d vertices, %d edges\n", g.n, nedges(g));
+  printf("%d vertices, %d edges\n", g.n, nedges(g) / 2);
   printf("current total spread: %d\n", la(g));
   printf("lower bound by edges method: %d\n", edges_method(g));
   printf("lower bound by degree method: %d\n", degree_method(g));
