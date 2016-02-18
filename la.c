@@ -87,7 +87,7 @@ int degree_method(struct graph g)
   return lb / 2;
 }
 
-int* bfs(struct graph g)
+int* bfs(struct graph g, int start)
 {
   enum { BLACK, GREY, WHITE };
   int* queue = malloc(sizeof(int) * g.n);
@@ -96,21 +96,19 @@ int* bfs(struct graph g)
   int end = 0;
   for (int i = 0; i < g.n; ++i)
     state[i] = WHITE;
-  for (int i = 0; i < g.n; ++i)
-    if (state[i] == WHITE) {
-      queue[end++] = i;
-      while (end != begin) {
-        int j = queue[begin++];
-        state[j] = BLACK;
-        int a = g.off[j];
-        int b = g.off[j + 1];
-        for (int e = a; e < b; ++e) {
-          int k = g.adj[e];
-          state[k] = GREY;
-          queue[end++] = k;
-        }
-      }
+  /* assuming connected */
+  queue[end++] = start;
+  while (end != begin) {
+    int j = queue[begin++];
+    state[j] = BLACK;
+    int a = g.off[j];
+    int b = g.off[j + 1];
+    for (int e = a; e < b; ++e) {
+      int k = g.adj[e];
+      state[k] = GREY;
+      queue[end++] = k;
     }
+  }
   free(state);
   return queue;
 }
