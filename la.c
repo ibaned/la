@@ -368,6 +368,34 @@ void info(struct graph g)
   printla(g, "normal layout");
 }
 
+double sq(double x)
+{
+  return x * x;
+}
+
+double dist(double* a, double* b)
+{
+  return sqrt(sq(a[0] - b[0]) +
+              sq(a[1] - b[1]) +
+              sq(a[2] - b[2]));
+}
+
+int find_closest(struct graph g,
+    double x, double y, double z)
+{
+  int closest = 0;
+  double xyz[3] = {x,y,z};
+  double cd = dist(xyz, g.xyz);
+  for (int i = 1; i < g.n; ++i) {
+    double d = dist(xyz, g.xyz + i * 3);
+    if (d < cd) {
+      closest = i;
+      cd = d;
+    }
+  }
+  return closest;
+}
+
 int main(int argc, char** argv)
 {
   struct graph g = read_graph(stdin);
@@ -376,6 +404,11 @@ int main(int argc, char** argv)
     read_coords(stdin, &g);
   info(g);
   test_bfs(g);
+  if (is_cube) {
+    test_ordering(g, "BFS (center)", get_bfs_order(g, find_closest(g, .5,.5,.5)));
+    test_ordering(g, "BFS (mid-face)", get_bfs_order(g, find_closest(g, .5,.5,0)));
+    test_ordering(g, "BFS (corner)", get_bfs_order(g, find_closest(g, 0,0,0)));
+  }
   test_cuthill_mckee(g);
 #if USE_METIS
   test_metis(g);
