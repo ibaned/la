@@ -317,19 +317,6 @@ int* get_metis_order(struct graph g)
       adjncy[j] = g.adj[j];
   }
   idx_t* vwgt = NULL;
-//idx_t options[METIS_NOPTIONS] = {0};
-//options[METIS_OPTION_CTYPE] = METIS_CTYPE_RM;
-//options[METIS_OPTION_RTYPE] = METIS_RTYPE_FM;
-//options[METIS_OPTION_NO2HOP] = 0;
-//options[METIS_OPTION_NSEPS] = 1;
-//options[METIS_OPTION_NITER] = 10;
-//options[METIS_OPTION_UFACTOR] = 10;
-//options[METIS_OPTION_COMPRESS] = 0;
-//options[METIS_OPTION_CCORDER] = 0;
-//options[METIS_OPTION_SEED] = 42;
-//options[METIS_OPTION_PFACTOR] = 0;
-//options[METIS_OPTION_NUMBERING] = 0;
-//options[METIS_OPTION_DBGLVL] = METIS_DBG_INFO | METIS_DBG_TIME;
   idx_t* options = NULL;
   idx_t* perm = malloc(sizeof(idx_t) * nvtxs);
   idx_t* iperm = malloc(sizeof(idx_t) * nvtxs);
