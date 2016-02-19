@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 #if USE_GSL
 #include <gsl/gsl_matrix.h>
@@ -16,6 +17,7 @@ struct graph {
   int n;
   int* off;
   int* adj;
+  double* xyz;
 };
 
 int nedges(struct graph g)
@@ -39,7 +41,15 @@ struct graph read_graph(FILE* f)
   g.adj = malloc(sizeof(int) * g.off[g.n]);
   for (int i = 0; i < nedges(g); ++i)
     fscanf(f, "%d", g.adj + i);
+  g.xyz = 0;
   return g;
+}
+
+void read_coords(FILE* f, struct graph* g)
+{
+  g->xyz = malloc(sizeof(double) * 3 * g->n);
+  for (int i = 0; i < 3 * g->n; ++i)
+    fscanf(f, "%lf", g->xyz + i);
 }
 
 void write_graph(FILE* f, struct graph g)
@@ -55,6 +65,7 @@ void free_graph(struct graph g)
 {
   free(g.off);
   free(g.adj);
+  free(g.xyz);
 }
 
 int la(struct graph g)
@@ -168,6 +179,7 @@ struct graph reorder(struct graph g, int* new_to_old)
     }
   }
   free(old_to_new);
+  g2.xyz = 0;
   return g2;
 }
 
@@ -350,9 +362,12 @@ void info(struct graph g)
   printla(g, "normal layout");
 }
 
-int main()
+int main(int argc, char** argv)
 {
   struct graph g = read_graph(stdin);
+  int is_cube = (argc == 2 && !strcmp(argv[1], "-c"));
+  if (is_cube)
+    read_coords(stdin, &g);
   info(g);
   test_bfs(g);
   test_cuthill_mckee(g);
