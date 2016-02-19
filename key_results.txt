@@ -6,8 +6,8 @@
        normal layout LA measure:         3163141
              BFS (0) LA measure:          678166
            BFS (n-1) LA measure:          675903
-   Cuthill-McKee (0) LA measure:          834692
- Cuthill-McKee (n-1) LA measure:          795868
+   Cuthill-McKee (0) LA measure:          822050
+ Cuthill-McKee (n-1) LA measure:          784566
                METIS LA measure:         1120368
 ~/code/la$ ./la < xgc.txt 
 3695 vertices, 10878 edges
@@ -16,6 +16,6 @@
        normal layout LA measure:         1743275
              BFS (0) LA measure:          910451
            BFS (n-1) LA measure:          471728
-   Cuthill-McKee (0) LA measure:          964786
- Cuthill-McKee (n-1) LA measure:          527689
+   Cuthill-McKee (0) LA measure:          956364
+ Cuthill-McKee (n-1) LA measure:          501883
                METIS LA measure:         1234170
