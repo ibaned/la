@@ -13,6 +13,10 @@
 #include <metis.h>
 #endif
 
+#if USE_ZOLTAN
+#include <zoltan.h>
+#endif
+
 struct graph {
   int n;
   int* off;
@@ -338,6 +342,17 @@ int* get_metis_order(struct graph g)
 void test_metis(struct graph g)
 {
   test_ordering(g, "METIS", get_metis_order(g));
+}
+#endif
+
+#if USE_ZOLTAN
+int* get_zoltan_rcb_order(struct graph g)
+{
+  float ver;
+  Zoltan_Initialize(0, 0, &ver);
+  struct Zoltan_Struct* zz = Zoltan_Create(MPI_COMM_WORLD);
+  /* TODO ??? */
+  Zoltan_Destroy(zz);
 }
 #endif
 
