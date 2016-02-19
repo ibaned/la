@@ -211,6 +211,7 @@ struct cm {
   int v;
   int l;
   int d;
+  int o;
 };
 
 int compare_cm(struct cm const* a, struct cm const* b)
@@ -219,7 +220,7 @@ int compare_cm(struct cm const* a, struct cm const* b)
     return a->l > b->l ? 1 : -1;
   if (a->d != b->d)
     return a->d > b->d ? 1 : -1;
-  return 0;
+  return a->o > b->o ? 1 : -1;
 }
 
 typedef int (*comparator)(const void*, const void*);
@@ -229,14 +230,17 @@ int* get_cuthill_mckee_order(struct graph g, int start)
   int* bfs_order;
   int* bfs_layer;
   bfs(g, start, &bfs_order, &bfs_layer);
+  int* old_to_new = invert_ordering(g.n, bfs_order);
   free(bfs_order);
   struct cm* cms = malloc(sizeof(struct cm) * g.n);
   for (int i = 0; i < g.n; ++i) {
     cms[i].v = i;
     cms[i].l = bfs_layer[i];
     cms[i].d = deg(g, i);
+    cms[i].o = old_to_new[i];
   }
   free(bfs_layer);
+  free(old_to_new);
   qsort(cms, g.n, sizeof(struct cm), (comparator) compare_cm);
   int* new_to_old = malloc(sizeof(int) * g.n);
   for (int i = 0; i < g.n; ++i)
