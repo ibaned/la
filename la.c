@@ -90,7 +90,6 @@ int edges_method(struct graph g)
   int n = g.n;
   int m = nedges(g) / 2;
   int i = 1;
-  int f = 0;
   int lb = 0;
   while (m > 0) {
     int take = n - i;
@@ -122,7 +121,6 @@ void bfs(struct graph g, int start,
 {
   int* queue = malloc(sizeof(int) * g.n);
   int* layer = malloc(sizeof(int) * g.n);
-  int nlayers = 0;
   int begin = 0;
   int end = 0;
   for (int i = 0; i < g.n; ++i)
