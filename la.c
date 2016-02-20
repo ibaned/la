@@ -346,13 +346,72 @@ void test_metis(struct graph g)
 #endif
 
 #if USE_ZOLTAN
-int* get_zoltan_rcb_order(struct graph g)
+/*ZOLTAN_OBJ_LIST_FN*/
+void ztn_objs(void *data, int num_gid_entries, int num_lid_entries, 
+    ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids, 
+    int wgt_dim, float *obj_wgts, int *ierr)
+{
+  struct graph* g = (struct graph*) data;
+  for(int i=0; i < g->n; i++)
+    global_ids[i] = i;
+  ierr = 0;
+}
+
+/* ZOLTAN_NUM_OBJ_FN */
+static int ztn_num_obj(void *data, int *ierr)
+{
+  struct graph* g = (struct graph*) data;
+  ierr = 0;
+  return g->n;
+}
+
+/* ZOLTAN_NUM_GEOM_FN */
+int ztn_num_dim(void* foo, int* bar)
+{
+  return 3;
+}
+
+/* ZOLTAN_GEOM_FN */
+void ztn_geom(void *data, int num_gid_entries, int num_lid_entries,
+    int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
+    int num_dim, double *geom_vec, int *ierr)
+{
+  struct graph* g = (struct graph*) data;
+  assert(num_obj == g->n);
+  assert(num_dim == 3);
+  for (int i = 0; i < num_dim * num_obj; ++i)
+    geom_vec[i] = g->xyz[i];
+  ierr = 0;
+}
+
+int* get_zoltan_hsfc_order(struct graph g)
 {
   float ver;
   Zoltan_Initialize(0, 0, &ver);
   struct Zoltan_Struct* zz = Zoltan_Create(MPI_COMM_WORLD);
-  /* TODO ??? */
-  Zoltan_Destroy(zz);
+  Zoltan_Set_Param(zz, "num_lid_entries", "0");
+  Zoltan_Set_Param(zz, "obj_weight_dim", "0");
+  Zoltan_Set_Param(zz, "debug_level", "0");
+  Zoltan_Set_Param(zz, "order_method", "LOCAL_HSFC");
+  Zoltan_Set_Fn(zz, ZOLTAN_NUM_OBJ_FN_TYPE, (void (*)())ztn_num_obj, (void*) (&g));
+  Zoltan_Set_Fn(zz, ZOLTAN_OBJ_LIST_FN_TYPE, (void (*)())ztn_objs, (void *) (&g));
+  Zoltan_Set_Fn(zz, ZOLTAN_NUM_GEOM_FN_TYPE, (void (*)())ztn_num_dim, (void*) (&g));
+  Zoltan_Set_Fn(zz, ZOLTAN_GEOM_MULTI_FN_TYPE, (void (*)())ztn_geom, (void*) (&g));
+  int num_gid_entries = 1;
+  ZOLTAN_ID_PTR ids = (ZOLTAN_ID_PTR) ZOLTAN_MALLOC(g.n*num_gid_entries*sizeof(ZOLTAN_ID_TYPE));
+  ZOLTAN_ID_PTR perm = (ZOLTAN_ID_PTR) ZOLTAN_MALLOC(g.n*num_gid_entries*sizeof(ZOLTAN_ID_TYPE));
+  assert(ids);
+  assert(perm);
+  for(int i=0; i<g.n; i++)
+    ids[i] = i;
+  Zoltan_Order(zz, num_gid_entries, g.n, ids, perm);
+  int* order = malloc(g.n*sizeof(int));
+  for(int i=0; i<g.n; i++)
+    order[i] = (int) perm[i];
+  ZOLTAN_FREE(&ids);
+  ZOLTAN_FREE(&perm);
+  Zoltan_Destroy(&zz);
+  return order;
 }
 #endif
 
@@ -408,6 +467,7 @@ int main(int argc, char** argv)
     test_ordering(g, "BFS (center)", get_bfs_order(g, find_closest(g, .5,.5,.5)));
     test_ordering(g, "BFS (mid-face)", get_bfs_order(g, find_closest(g, .5,.5,0)));
     test_ordering(g, "BFS (corner)", get_bfs_order(g, find_closest(g, 0,0,0)));
+    test_ordering(g, "HSFC", get_zoltan_hsfc_order(g));
   }
   test_cuthill_mckee(g);
 #if USE_METIS
