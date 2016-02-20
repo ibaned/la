@@ -1,7 +1,8 @@
-./la -c < warp_0016.txt
+./la -cube < warp_0016.txt
 1254 vertices, 7871 edges
             edges LB LA measure:           28819
            degree LB LA measure:           30504
+      Juvan-Mohar LB LA measure:           73056
        normal layout LA measure:         3163141
              BFS (0) LA measure:          678166
            BFS (n-1) LA measure:          675903
@@ -11,14 +12,15 @@
                 HSFC LA measure:          597009
    Cuthill-McKee (0) LA measure:          822050
  Cuthill-McKee (n-1) LA measure:          784566
-               METIS LA measure:         1118150
-./la -c < xgc.txt
+               METIS LA measure:         1120368
+./la -coord < xgc.txt
 3695 vertices, 10878 edges
             edges LB LA measure:           21553
            degree LB LA measure:           21812
        normal layout LA measure:         1743275
              BFS (0) LA measure:          910451
            BFS (n-1) LA measure:          471728
+                HSFC LA measure:          627726
    Cuthill-McKee (0) LA measure:          956364
  Cuthill-McKee (n-1) LA measure:          501883
-               METIS LA measure:         1216721
+               METIS LA measure:         1234170

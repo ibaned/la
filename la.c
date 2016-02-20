@@ -456,8 +456,9 @@ int find_closest(struct graph g,
 int main(int argc, char** argv)
 {
   struct graph g = read_graph(stdin);
-  int is_cube = (argc == 2 && !strcmp(argv[1], "-c"));
-  if (is_cube)
+  int is_cube = (argc == 2 && !strcmp(argv[1], "-cube"));
+  int has_coords = (argc == 2 && !strcmp(argv[1], "-coord")) || is_cube;
+  if (has_coords)
     read_coords(stdin, &g);
   info(g);
   test_bfs(g);
@@ -465,8 +466,12 @@ int main(int argc, char** argv)
     test_ordering(g, "BFS (center)", get_bfs_order(g, find_closest(g, .5,.5,.5)));
     test_ordering(g, "BFS (mid-face)", get_bfs_order(g, find_closest(g, .5,.5,0)));
     test_ordering(g, "BFS (corner)", get_bfs_order(g, find_closest(g, 0,0,0)));
+  }
+#if USE_ZOLTAN
+  if (has_coords) {
     test_ordering(g, "HSFC", get_zoltan_hsfc_order(g));
   }
+#endif
   test_cuthill_mckee(g);
 #if USE_METIS
   test_metis(g);
