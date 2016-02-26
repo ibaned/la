@@ -24,3 +24,14 @@
    Cuthill-McKee (0) LA measure:          956364
  Cuthill-McKee (n-1) LA measure:          501883
                METIS LA measure:         1234170
+./la -coord < solder_balls.txt 
+2601 vertices, 15290 edges
+            edges LB LA measure:           52760
+           degree LB LA measure:           58366
+       normal layout LA measure:         8688982
+             BFS (0) LA measure:         2085725
+           BFS (n-1) LA measure:         2098239
+                HSFC LA measure:         1877633
+   Cuthill-McKee (0) LA measure:         2161626
+ Cuthill-McKee (n-1) LA measure:         2198386
+               METIS LA measure:         2849735
